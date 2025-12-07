@@ -1,2 +1,1 @@
-# sovereign-identity-layer
-Sovereign Digital Identity Layer (SDI-L): ZKP-based passwordless auth flow
+Developed by Mojito ,proof that procrastination builds careers,grades alone won’t. 
