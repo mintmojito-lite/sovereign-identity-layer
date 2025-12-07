@@ -1,12 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from instagram_server import InstagramServer
+from server_srav import Server_Srav
 
 app = Flask(__name__)
-server = InstagramServer()
+server = Server_Srav()
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/register_device', methods=['POST'])
 def register_device():

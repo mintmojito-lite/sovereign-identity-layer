@@ -3,10 +3,10 @@ import time
 import sqlite3
 import json
 
-class Server_Srav: # <-- RENAMED CLASS
+class Server_Srav:
     def __init__(self, db_path="sdi_l.db"):
         self.db_path = db_path
-        self.user_devices = {}  # {user_id: [{'device_id': str, 'public_ver_key': int}, ...]}
+        self.user_devices = {}
         self.challenge_timestamps = {}
         self.active_sessions = {}
         self.TTL = 60
@@ -51,7 +51,6 @@ class Server_Srav: # <-- RENAMED CLASS
             user_id, token_json = row
             self.active_sessions[user_id] = json.loads(token_json)
         conn.close()
-        print(f"Loaded {sum(len(devs) for devs in self.user_devices.values())} devices and {len(self.active_sessions)} sessions from DB.")
 
     def _save_to_db(self):
         conn = sqlite3.connect(self.db_path)
@@ -69,14 +68,14 @@ class Server_Srav: # <-- RENAMED CLASS
         conn.commit()
         conn.close()
 
-    def register_device(self, user_id, public_ver_key):
+    def register_device(self, user_id, public_ver_key, suppress_output=False):
         if user_id not in self.user_devices:
             self.user_devices[user_id] = []
         device_id = secrets.token_hex(8)
         device = {'device_id': device_id, 'public_ver_key': public_ver_key}
         self.user_devices[user_id].append(device)
-        print(f"Device {device_id[:4]}... registered for user {user_id} with public key {public_ver_key}.")
-        print(f"Total devices for {user_id}: {len(self.user_devices[user_id])}")
+        if not suppress_output:
+            print(f"Device {device_id[:4]}... registered for user {user_id}.")
         self._save_to_db()
 
     def get_registered_devices(self, user_id):
@@ -90,7 +89,6 @@ class Server_Srav: # <-- RENAMED CLASS
         challenge = secrets.randbelow(self.P)
         timestamp = time.time()
         self.challenge_timestamps[user_id] = timestamp
-        print(f"Challenge generated for {user_id}: {challenge} (public, disposable; issued at {timestamp:.0f}).")
         return challenge
 
     def verify_zkp_proof(self, user_id, challenge, proof):
@@ -110,13 +108,11 @@ class Server_Srav: # <-- RENAMED CLASS
                 break
         
         if verified_with_device is None:
-            print(f"ZKP verification failed for {user_id} – Proof invalid (no matching device)!")
             return False, None
         
         issue_time = self.challenge_timestamps[user_id]
         current_time = time.time()
         if current_time - issue_time > self.TTL:
-            print(f"ZKP verification failed for {user_id} – Proof expired (TTL exceeded: {current_time - issue_time:.1f}s > {self.TTL}s)!")
             del self.challenge_timestamps[user_id]
             return False, None
         
@@ -129,39 +125,31 @@ class Server_Srav: # <-- RENAMED CLASS
             'device_used': verified_with_device
         }
         self.active_sessions[user_id] = token
-        print(f"ZKP verification success for {user_id} via device {verified_with_device[:4]}... – Access granted (within TTL: {current_time - issue_time:.1f}s)! Session token issued: {token_id[:8]}...")
         del self.challenge_timestamps[user_id]
         self._save_to_db()
         return True, token
 
     def revoke_session(self, user_id):
         if user_id in self.active_sessions:
-            revoked_token = self.active_sessions[user_id]['token_id'][:8]
             del self.active_sessions[user_id]
-            print(f"Session revoked for {user_id} – Token {revoked_token}... invalidated (logout complete)!")
             self._save_to_db()
             return True
         else:
-            print(f"No active session to revoke for {user_id}!")
             return False
 
     def validate_session(self, user_id, token):
         if user_id not in self.active_sessions:
-            print(f"Session validation failed for {user_id} – No active session (possibly revoked or expired)!")
             return False
         stored_token = self.active_sessions[user_id]
         current_time = time.time()
         if stored_token['expires_at'] < current_time:
-            print(f"Session validation failed for {user_id} – Token expired ({current_time - stored_token['issued_at']:.0f}s ago)!")
             del self.active_sessions[user_id]
             self._save_to_db()
             return False
         
         if token['token_id'] != stored_token['token_id']:
-             print(f"Session validation failed for {user_id} – Token ID mismatch!")
              return False
 
-        print(f"Session validation success for {user_id} – Token valid (expires in {stored_token['expires_at'] - current_time:.0f}s; from device {stored_token['device_used'][:4]}...)!")
         return True
 
 if __name__ == "__main__":

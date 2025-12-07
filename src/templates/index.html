@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Identity Layer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sovereign Identity Layer</h1>
+            <div class="subtitle">Zero-Knowledge Proof Authentication Demo</div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-register">Register Device</div>
+            <div class="tab" id="tab-login">Secure Login</div>
+        </div>
+
+        <!-- Registration View -->
+        <div id="view-register" class="card fade-in">
+            <h2>Device Registration</h2>
+            <div class="form-group">
+                <label for="reg-user-id">User Identity (e.g., username)</label>
+                <input type="text" id="reg-user-id" placeholder="Enter user ID">
+            </div>
+            <button id="btn-register" class="btn-primary">Generate Key & Register</button>
+            <div class="status">
+                <p>This will generate a 256-bit secure key locally and register it.</p>
+            </div>
+        </div>
+
+        <!-- Login View -->
+        <div id="view-login" class="card hidden fade-in">
+            <h2>Zero-Knowledge Login</h2>
+            <div class="form-group">
+                <label for="login-user-id">User Identity</label>
+                <input type="text" id="login-user-id" placeholder="Enter user ID">
+            </div>
+            <button id="btn-login" class="btn-primary">Authenticate</button>
+        </div>
+
+        <!-- Dashboard View (Protected) -->
+        <div id="view-dashboard" class="card hidden fade-in">
+            <h2>Session Active</h2>
+            <div class="device-item">
+                <span>User</span>
+                <strong id="dash-user-id"></strong>
+            </div>
+            <div class="device-item">
+                <span>Token ID</span>
+                <code id="dash-token-id"></code>
+            </div>
+            <div class="device-item">
+                <span>Expires</span>
+                <span id="dash-expires"></span>
+            </div>
+            <br>
+            <div style="display: grid; gap: 10px;">
+                <button id="btn-validate" class="btn-secondary">Validate Session State</button>
+                <button id="btn-revoke" class="btn-danger">Logout (Revoke Session)</button>
+            </div>
+        </div>
+
+        <!-- Console Output -->
+        <div class="card">
+            <h2>System Logs</h2>
+            <pre id="console-output" style="height: 150px;"></pre>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
